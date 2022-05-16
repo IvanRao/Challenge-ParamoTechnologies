@@ -2,6 +2,6 @@
 {
     public interface IUserValidator
     {
-        void ValidateErrors(string name, string email, string address, string phone, ref string errors);
+        string ValidateErrors(string name, string email, string address, string phone);
     }
 }

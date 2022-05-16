@@ -6,8 +6,9 @@ namespace Sat.Recruitment.Api.Validators
     {
         public UserValidator() { }
 
-        public void ValidateErrors(string name, string email, string address, string phone, ref string errors)
+        public string ValidateErrors(string name, string email, string address, string phone)
         {
+            string errors = "";
             if (name == null)
                 //Validate if Name is null
                 errors = "The name is required";
@@ -20,6 +21,8 @@ namespace Sat.Recruitment.Api.Validators
             if (phone == null)
                 //Validate if Phone is null
                 errors += " The phone is required";
+
+            return errors;
         }
     }
 }

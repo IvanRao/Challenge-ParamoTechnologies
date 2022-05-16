@@ -22,10 +22,9 @@ namespace Sat.Recruitment.Api.Services
 
         public Result CreateUser(string name, string email, string address, string phone, string userType, string money)
         {
-            var errors = "";
             List<User> _users = GetUsers();
 
-            _userValidator.ValidateErrors(name, email, address, phone, ref errors);
+            var errors = _userValidator.ValidateErrors(name, email, address, phone);
 
             if (errors != null && errors != "")
                 return new Result()

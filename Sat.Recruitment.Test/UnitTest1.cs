@@ -4,6 +4,7 @@ using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Sat.Recruitment.Api.Controllers;
+using Sat.Recruitment.Api.Interfaces;
 using Sat.Recruitment.Api.Services;
 using Sat.Recruitment.Api.Utilities;
 using Sat.Recruitment.Api.Validators;
@@ -17,17 +18,7 @@ namespace Sat.Recruitment.Test
         [Fact]
         public void Test1()
         {
-            var errors = "";
-            var mockValidator = new Mock<UserValidator>();
-            mockValidator.Setup(
-                x => x.ValidateErrors("Mike", "mike@gmail.com", "Av. Juan G", "+349 1122354215", ref errors));
-
-            var mockReader = new Mock<UserReader>();
-            mockReader.Setup(
-                x => x.ReadUsersFromFile())
-                    .Returns(new StreamReader(new FileStream(Directory.GetCurrentDirectory() + "/Files/Users.txt", FileMode.Open)));
-
-            var mockService = new Mock<UserService>(mockValidator, mockReader);
+            var mockService = new Mock<IUserService>();
             mockService.Setup(
                 x => x.CreateUser("Mike", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124"))
                     .Returns(new Api.Models.Result { IsSuccess = true, Errors = "User Created" });
@@ -43,13 +34,41 @@ namespace Sat.Recruitment.Test
         [Fact]
         public void Test2()
         {
-            var mockService = new Mock<UserService>();
+            var mockService = new Mock<IUserService>();
+            mockService.Setup(
+                x => x.CreateUser("Mike", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124"))
+                    .Returns(new Api.Models.Result { IsSuccess = false, Errors = "The user is duplicated" });
+
             var userController = new UsersController(mockService.Object);
 
-            var result = userController.CreateUser("Agustina", "Agustina@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124");
+            var result = userController.CreateUser("Mike", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124");
 
             Assert.False(result.IsSuccess);
             Assert.Equal("The user is duplicated", result.Errors);
+        }
+
+        [Fact]
+        public void Test3()
+        {
+            var mockUserValidator = new Mock<IUserValidator>();
+            mockUserValidator.Setup(
+                x => x.ValidateErrors("", "mike@gmail.com", "Av. Juan G", "+349 1122354215"))
+                .Returns("The name is required");
+
+            var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
+            FileStream fileStream = new FileStream(path, FileMode.Open);
+
+            var mockUserReader = new Mock<IUserReader>();
+            mockUserReader.Setup(
+                x => x.ReadUsersFromFile())
+                .Returns(() => new StreamReader(fileStream));
+
+            var userService = new UserService(mockUserValidator.Object, mockUserReader.Object);
+
+            var result = userService.CreateUser("", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124");
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("The name is required", result.Errors);
         }
     }
 }
