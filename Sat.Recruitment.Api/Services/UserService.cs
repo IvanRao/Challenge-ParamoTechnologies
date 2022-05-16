@@ -1,4 +1,5 @@
-﻿using Sat.Recruitment.Api.Models;
+﻿using Sat.Recruitment.Api.Interfaces;
+using Sat.Recruitment.Api.Models;
 using Sat.Recruitment.Api.Utilities;
 using Sat.Recruitment.Api.Validators;
 using System;
@@ -7,16 +8,17 @@ using System.Diagnostics;
 
 namespace Sat.Recruitment.Api.Services
 {
-    public class UserService
+    public class UserService : IUserService
     {
-        private readonly UserValidator _userValidator;
-        private readonly UserReader _userReader;
+        private readonly IUserValidator _userValidator;
+        private readonly IUserReader _userReader;
 
-        UserService(UserValidator userValidator, UserReader userReader)
+        public UserService(IUserValidator userValidator, IUserReader userReader)
         {
             _userValidator = userValidator;
             _userReader = userReader;
         }
+
 
         public Result CreateUser(string name, string email, string address, string phone, string userType, string money)
         {
@@ -35,73 +37,31 @@ namespace Sat.Recruitment.Api.Services
             var newUser = new User
             {
                 Name = name,
-                Email = email,
+                Email = NormalizeEmail(email),
                 Address = address,
                 Phone = phone,
                 UserType = userType,
-                Money = decimal.Parse(money)
+                Money = CalculateMoney(userType, decimal.Parse(money))
             };
-
-            if (newUser.UserType == "Normal")
-            {
-                if (decimal.Parse(money) > 100)
-                {
-                    var percentage = Convert.ToDecimal(0.12);
-                    //If new user is normal and has more than USD100
-                    var gif = decimal.Parse(money) * percentage;
-                    newUser.Money = newUser.Money + gif;
-                }
-                if (decimal.Parse(money) < 100)
-                {
-                    if (decimal.Parse(money) > 10)
-                    {
-                        var percentage = Convert.ToDecimal(0.8);
-                        var gif = decimal.Parse(money) * percentage;
-                        newUser.Money = newUser.Money + gif;
-                    }
-                }
-            }
-            
-            if (newUser.UserType == "SuperUser")
-            {
-                if (decimal.Parse(money) > 100)
-                {
-                    var percentage = Convert.ToDecimal(0.20);
-                    var gif = decimal.Parse(money) * percentage;
-                    newUser.Money = newUser.Money + gif;
-                }
-            }
-            if (newUser.UserType == "Premium")
-            {
-                if (decimal.Parse(money) > 100)
-                {
-                    var gif = decimal.Parse(money) * 2;
-                    newUser.Money = newUser.Money + gif;
-                }
-            }
-
-            //Normalize email
-            newUser.Email = NormalizeEmail(newUser.Email);
 
             try
             {
                 var isDuplicated = false;
+
                 foreach (var user in _users)
                 {
-                    if (user.Email == newUser.Email
-                        ||
-                        user.Phone == newUser.Phone)
+                    if (user.Email == newUser.Email || user.Phone == newUser.Phone)
                     {
                         isDuplicated = true;
+                        break;
                     }
                     else if (user.Name == newUser.Name)
                     {
                         if (user.Address == newUser.Address)
                         {
                             isDuplicated = true;
-                            throw new Exception("User is duplicated");
+                            break;
                         }
-
                     }
                 }
 
@@ -147,6 +107,49 @@ namespace Sat.Recruitment.Api.Services
             aux[0] = atIndex < 0 ? aux[0].Replace(".", "") : aux[0].Replace(".", "").Remove(atIndex);
 
             return string.Join("@", new string[] { aux[0], aux[1] });
+        }
+
+        private decimal CalculateMoney(string type, decimal money)
+        {
+            decimal gif = 0;
+
+            if (type == "Normal")
+            {
+                if (money > 100)
+                {
+                    var percentage = Convert.ToDecimal(0.12);
+                    //If new user is normal and has more than USD100
+                    gif = money * percentage;
+                }
+
+                if (money <= 100)
+                {
+                    if (money > 10)
+                    {
+                        var percentage = Convert.ToDecimal(0.8);
+                        gif = money * percentage;
+                    }
+                }
+            }
+
+            if (type == "SuperUser")
+            {
+                if (money > 100)
+                {
+                    var percentage = Convert.ToDecimal(0.20);
+                    gif = money * percentage;
+                }
+            }
+
+            if (type == "Premium")
+            {
+                if (money > 100)
+                {
+                    gif = money * 2;
+                }
+            }
+
+            return money + gif;
         }
 
         private List<User> GetUsers()

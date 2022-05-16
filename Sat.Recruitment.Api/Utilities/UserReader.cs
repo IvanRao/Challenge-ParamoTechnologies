@@ -1,9 +1,12 @@
-﻿using System.IO;
+﻿using Sat.Recruitment.Api.Interfaces;
+using System.IO;
 
 namespace Sat.Recruitment.Api.Utilities
 {
-    public class UserReader
+    public class UserReader : IUserReader
     {
+        public UserReader() { }
+
         public StreamReader ReadUsersFromFile()
         {
             var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
