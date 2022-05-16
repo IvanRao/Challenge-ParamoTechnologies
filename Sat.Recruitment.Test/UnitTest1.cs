@@ -70,5 +70,53 @@ namespace Sat.Recruitment.Test
             Assert.False(result.IsSuccess);
             Assert.Equal("The name is required", result.Errors);
         }
+
+        [Fact]
+        public void Test4()
+        {
+            var mockUserValidator = new Mock<IUserValidator>();
+            mockUserValidator.Setup(
+                x => x.ValidateErrors("Agustina", "Agustina @gmail.com", "Garay y Otra Calle", "+534645213542"))
+                .Returns("");
+
+            var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
+            FileStream fileStream = new FileStream(path, FileMode.Open);
+
+            var mockUserReader = new Mock<IUserReader>();
+            mockUserReader.Setup(
+                x => x.ReadUsersFromFile())
+                .Returns(() => new StreamReader(fileStream));
+
+            var userService = new UserService(mockUserValidator.Object, mockUserReader.Object);
+
+            var result = userService.CreateUser("Agustina", "Agustina @gmail.com", "Garay y Otra Calle", "+534645213542", "SuperUser", "112234");
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("The user is duplicated", result.Errors);
+        }
+
+        [Fact]
+        public void Test5()
+        {
+            var mockUserValidator = new Mock<IUserValidator>();
+            mockUserValidator.Setup(
+                x => x.ValidateErrors("Agustina", "Agustina @gmail.com", "Garay y Otra Calle 2", "+534645213542"))
+                .Returns("");
+
+            var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
+            FileStream fileStream = new FileStream(path, FileMode.Open);
+
+            var mockUserReader = new Mock<IUserReader>();
+            mockUserReader.Setup(
+                x => x.ReadUsersFromFile())
+                .Returns(() => new StreamReader(fileStream));
+
+            var userService = new UserService(mockUserValidator.Object, mockUserReader.Object);
+
+            var result = userService.CreateUser("Agustina", "AgustinaR @gmail.com", "Garay y Otra Calle 2", "+534645213544", "SuperUser", "112234");
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal("User Created", result.Errors);
+        }
     }
 }
