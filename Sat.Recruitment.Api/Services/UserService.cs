@@ -19,7 +19,6 @@ namespace Sat.Recruitment.Api.Services
             _userReader = userReader;
         }
 
-
         public Result CreateUser(string name, string email, string address, string phone, string userType, string money)
         {
             List<User> _users = GetUsers();

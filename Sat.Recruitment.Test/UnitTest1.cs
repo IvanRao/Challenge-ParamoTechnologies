@@ -18,6 +18,27 @@ namespace Sat.Recruitment.Test
         [Fact]
         public void Test1()
         {
+            var mockUserValidator = new Mock<UserValidator>();
+
+            var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
+            FileStream fileStream = new FileStream(path, FileMode.Open);
+            var mockUserReader = new Mock<IUserReader>();
+            mockUserReader.Setup(
+                x => x.ReadUsersFromFile())
+                .Returns(() => new StreamReader(fileStream));
+
+            var userService = new UserService(mockUserValidator.Object, mockUserReader.Object);
+            var userController = new UsersController(userService);
+
+            var result = userController.CreateUser("Mike", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124");
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal("User Created", result.Errors);
+        }
+
+        [Fact]
+        public void Test1_2()
+        {
             var mockService = new Mock<IUserService>();
             mockService.Setup(
                 x => x.CreateUser("Mike", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124"))
@@ -50,10 +71,7 @@ namespace Sat.Recruitment.Test
         [Fact]
         public void Test3()
         {
-            var mockUserValidator = new Mock<IUserValidator>();
-            mockUserValidator.Setup(
-                x => x.ValidateErrors("", "mike@gmail.com", "Av. Juan G", "+349 1122354215"))
-                .Returns("The name is required");
+            var mockUserValidator = new Mock<UserValidator>();
 
             var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
             FileStream fileStream = new FileStream(path, FileMode.Open);
@@ -67,17 +85,15 @@ namespace Sat.Recruitment.Test
 
             var result = userService.CreateUser("", "mike@gmail.com", "Av. Juan G", "+349 1122354215", "Normal", "124");
 
-            Assert.False(result.IsSuccess);
             Assert.Equal("The name is required", result.Errors);
+            Assert.False(result.IsSuccess);
+            
         }
 
         [Fact]
         public void Test4()
         {
-            var mockUserValidator = new Mock<IUserValidator>();
-            mockUserValidator.Setup(
-                x => x.ValidateErrors("Agustina", "Agustina @gmail.com", "Garay y Otra Calle", "+534645213542"))
-                .Returns("");
+            var mockUserValidator = new Mock<UserValidator>();
 
             var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
             FileStream fileStream = new FileStream(path, FileMode.Open);
@@ -98,10 +114,7 @@ namespace Sat.Recruitment.Test
         [Fact]
         public void Test5()
         {
-            var mockUserValidator = new Mock<IUserValidator>();
-            mockUserValidator.Setup(
-                x => x.ValidateErrors("Agustina", "Agustina @gmail.com", "Garay y Otra Calle 2", "+534645213542"))
-                .Returns("");
+            var mockUserValidator = new Mock<UserValidator>();
 
             var path = Directory.GetCurrentDirectory() + "/Files/Users.txt";
             FileStream fileStream = new FileStream(path, FileMode.Open);

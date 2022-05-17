@@ -9,16 +9,16 @@ namespace Sat.Recruitment.Api.Validators
         public string ValidateErrors(string name, string email, string address, string phone)
         {
             string errors = "";
-            if (name == null)
+            if (string.IsNullOrEmpty(name))
                 //Validate if Name is null
                 errors = "The name is required";
-            if (email == null)
+            if (string.IsNullOrEmpty(email))
                 //Validate if Email is null
                 errors += " The email is required";
-            if (address == null)
+            if (string.IsNullOrEmpty(address))
                 //Validate if Address is null
                 errors += " The address is required";
-            if (phone == null)
+            if (string.IsNullOrEmpty(phone))
                 //Validate if Phone is null
                 errors += " The phone is required";
 
