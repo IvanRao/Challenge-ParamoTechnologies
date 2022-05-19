@@ -18,9 +18,18 @@ namespace Sat.Recruitment.Api.Controllers
 
         [HttpPost]
         [Route("/create-user")]
-        public Result CreateUser(string name, string email, string address, string phone, string userType, string money)
+        public ActionResult<Result> CreateUser(string name, string email, string address, string phone, string userType, string money)
         {
-            return _userService.CreateUser(name, email, address, phone, userType, money);
+            var result = _userService.CreateUser(name, email, address, phone, userType, money);
+
+            if (result.IsSuccess)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return BadRequest(result);
+            }
         }
 
     }

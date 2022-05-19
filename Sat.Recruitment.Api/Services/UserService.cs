@@ -21,17 +21,20 @@ namespace Sat.Recruitment.Api.Services
 
         public Result CreateUser(string name, string email, string address, string phone, string userType, string money)
         {
+            // Get the existing users
             List<User> _users = GetUsers();
-
+            
+            // Check for errors
             var errors = _userValidator.ValidateErrors(name, email, address, phone);
 
             if (errors != null && errors != "")
                 return new Result()
                 {
                     IsSuccess = false,
-                    Errors = errors
+                    Errors = errors.Trim()
                 };
 
+            // Create the new user
             var newUser = new User
             {
                 Name = name,
@@ -41,29 +44,13 @@ namespace Sat.Recruitment.Api.Services
                 UserType = userType,
                 Money = CalculateMoney(userType, decimal.Parse(money))
             };
-
+            
             try
             {
-                var isDuplicated = false;
+                // Check is the data of the new user match with the data of an existing user
+                var userExists = _users.Find(x => x.Email == newUser.Email || x.Phone == newUser.Phone || (x.Name == newUser.Name && x.Address == newUser.Address));
 
-                foreach (var user in _users)
-                {
-                    if (user.Email == newUser.Email || user.Phone == newUser.Phone)
-                    {
-                        isDuplicated = true;
-                        break;
-                    }
-                    else if (user.Name == newUser.Name)
-                    {
-                        if (user.Address == newUser.Address)
-                        {
-                            isDuplicated = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!isDuplicated)
+                if (userExists == null)
                 {
                     Debug.WriteLine("User Created");
 
@@ -86,16 +73,21 @@ namespace Sat.Recruitment.Api.Services
             }
             catch
             {
-                Debug.WriteLine("The user is duplicated");
+                Debug.WriteLine("Unknown error");
 
                 return new Result()
                 {
                     IsSuccess = false,
-                    Errors = "The user is duplicated"
+                    Errors = "Unknown error"
                 };
             }
         }
 
+        /// <summary>
+        /// Normalize the email of the new user
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
         private string NormalizeEmail(string email)
         {
             var aux = email.Split(new char[] { '@' }, StringSplitOptions.RemoveEmptyEntries);
@@ -107,54 +99,59 @@ namespace Sat.Recruitment.Api.Services
             return string.Join("@", new string[] { aux[0], aux[1] });
         }
 
+        /// <summary>
+        /// Calculate the percentage of interest depending the user type and adds it to the original amount of the user
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="money"></param>
+        /// <returns></returns>
         private decimal CalculateMoney(string type, decimal money)
         {
-            decimal gif = 0;
+            decimal percentage = 0;
 
-            if (type == "Normal")
+            if (type == UserTypes.NORMAL_USER)
             {
                 if (money > 100)
                 {
-                    var percentage = Convert.ToDecimal(0.12);
-                    //If new user is normal and has more than USD100
-                    gif = money * percentage;
+                    // If new user is normal and has more than USD100
+                    percentage = Convert.ToDecimal(0.12);
                 }
-
-                if (money <= 100)
+                else if (money <= 100 && money > 10)
                 {
-                    if (money > 10)
-                    {
-                        var percentage = Convert.ToDecimal(0.8);
-                        gif = money * percentage;
-                    }
+                    // If new user is normal and has less than USD10
+                    percentage = Convert.ToDecimal(0.8);
                 }
             }
-
-            if (type == "SuperUser")
+            else if (type == UserTypes.SUPER_USER)
             {
                 if (money > 100)
                 {
-                    var percentage = Convert.ToDecimal(0.20);
-                    gif = money * percentage;
+                    // If new user is super and has more than USD100
+                    percentage = Convert.ToDecimal(0.20);
                 }
             }
-
-            if (type == "Premium")
+            else if (type == UserTypes.PREMIUM_USER)
             {
                 if (money > 100)
                 {
-                    gif = money * 2;
+                    // If new user is premium and has more than USD100
+                    percentage = 2;
                 }
             }
 
-            return money + gif;
+            // Returns the original amount plus the extra assigned to each user type
+            return money + (money * percentage);
         }
 
+        /// <summary>
+        /// Reads the file Users.txt and returns a list of users
+        /// </summary>
+        /// <returns></returns>
         private List<User> GetUsers()
         {
-            var reader = _userReader.ReadUsersFromFile();
-
             List<User> users = new List<User>();
+
+            var reader = _userReader.ReadUsersFromFile();
 
             while (reader.Peek() >= 0)
             {
